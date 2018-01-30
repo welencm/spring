@@ -1,4 +1,4 @@
-package red.mockers.generator;
+package red.mockers.mocker;
 
 import java.util.Date;
 import java.util.Random;

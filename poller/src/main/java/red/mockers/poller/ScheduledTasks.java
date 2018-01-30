@@ -20,7 +20,7 @@ public class ScheduledTasks {
     
     private ForexApiParser parser = new TrueFXApiParser();
 
-    @Scheduled(fixedRate = 5000)
+    @Scheduled(fixedRate = 10000)
     public void reportCurrentTime() {
         RestTemplate restTemplate = new RestTemplate();
         String responseBody = restTemplate.getForObject("http://webrates.truefx.com/rates/connect.html?f=csv", String.class);

@@ -6,34 +6,34 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.TimeZone;
 
-public class Cube {
+public class CubeEntry {
     private final static String DATE_FORMAT = "yyyy-MM-dd'T'hh:mm:ss";
     
     private String reportName;
-    private String[] columnNames = {"pair", "bid", "ask", "time:PK"};
-    private String[] columnTypes = {"string", "double", "double", "string"};
+    private String[] columnNames = {"id:PK", "currency:PK", "price", "date"};
+    private String[] columnTypes = {"long", "string", "double", "datetime"};
     private String[][] rows;
     
-    public Cube(){
+    public CubeEntry(){
         
     }
     
-    public Cube(String reportName, String pair, double bid, double ask, Date date){
+    public CubeEntry(String reportName, long id, String currency, double price, Date date){
         this.reportName = reportName;
         
         SimpleDateFormat df = new SimpleDateFormat(DATE_FORMAT);
         df.setTimeZone(TimeZone.getTimeZone("UTC"));
         
         this.rows = new String[][] {new String[]{
-            "pair=" + pair,
-            "bid=" + Double.toString(bid),
-            "ask=" + Double.toString(ask),
-            "time=" + df.format(date)
+            "id=" + Long.toString(id),
+            "currency=" + currency,
+            "price=" + Double.toString(price),
+            "date=" + df.format(date)
         }};
     }
 
-    public Cube(String reportName, Rate rate){
-        this(reportName, rate.getPair(), rate.getBid(), rate.getAsk(), rate.getDate());
+    public CubeEntry(String reportName, long id, Rate rate){
+        this(reportName, id, rate.getPair(), rate.getAsk(), rate.getDate());
     }
     
     @Override

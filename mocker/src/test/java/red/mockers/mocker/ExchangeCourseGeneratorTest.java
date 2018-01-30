@@ -1,6 +1,6 @@
-package red.mockers.generator;
+package red.mockers.mocker;
 
-import red.mockers.generator.ExchangeCourseGenerator;
+import red.mockers.mocker.ExchangeCourseGenerator;
 import junit.framework.TestCase;
 import org.junit.Test;
 import red.mockers.common.Rate;
