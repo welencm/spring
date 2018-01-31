@@ -1,8 +1,9 @@
 package red.mockers.supplier;
 
 import java.util.Date;
-import java.util.Hashtable;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
@@ -16,21 +17,33 @@ import red.mockers.common.Rate;
 
 @RestController
 @RequestMapping("/rate")
-public class RateRestController {
-        
-    RestTemplate restTemplate = new RestTemplate();
-    AuthenticationData authenticationData;
-    HttpHeaders headers;
+public class RateRestController {        
+    private boolean authenticated = false;
     
-    private Rate lastRate = new Rate(new Date(), "EUR/PLN", 4.1291, 4.135);
-   
-    private Hashtable<String, AtomicLong> idGenerators = new Hashtable<String, AtomicLong>();
-        
-    public RateRestController() {
-        authenticate();
-        headers = new HttpHeaders();
-        headers.set("Content-Type", "application/json");
-        headers.set("Authorization", authenticationData.getToken());
+    @Value("${environment.host}")
+    private String environmentHost;
+    
+    @Value("${environment.login}")
+    private String environmentLogin;
+    
+    @Value("${environment.password}")
+    private String environmentPassword;
+    
+    @Value("${cube.complete}")
+    private String cubeComplete;
+    
+    @Value("${cube.recent}")
+    private String cubeRecent;
+    
+    private final RestTemplate restTemplate = new RestTemplate();    
+    private HttpHeaders headers;    
+    private final ConcurrentHashMap<String, AtomicLong> idGenerators;
+    
+    private Rate lastRate = new Rate(new Date(), "EUR/PLN", 4.1234, 4.4321);
+
+    public RateRestController() {       
+        this.idGenerators = new ConcurrentHashMap<>();
+
     }
     
     @RequestMapping(method = RequestMethod.GET)
@@ -39,29 +52,36 @@ public class RateRestController {
     }
     
     @RequestMapping(method = RequestMethod.POST)
-    ResponseEntity<?> addRate(@RequestBody Rate input) {
+    ResponseEntity<?> addRate(@RequestBody Rate input) {               
         lastRate = input;
-        System.out.println(lastRate);
         
+        if(!authenticated)
+            authenticate();                        
+                
         AtomicLong idGenerator = idGenerators.get(input.getPair());
         if(idGenerator == null) {
             idGenerator = new AtomicLong();
             idGenerators.put(input.getPair(), idGenerator);
         }
         
-        CubeEntry cubeEntry = new CubeEntry("supplier1", idGenerator.incrementAndGet(), input);
+        CubeEntry cubeEntry = new CubeEntry(cubeComplete, idGenerator.incrementAndGet(), input);
         
         System.out.println(cubeEntry);
         HttpEntity<CubeEntry> request = new HttpEntity<>(cubeEntry, headers);
         
-        String response = restTemplate.postForObject("http://rep-red-mockers-m2.qa.ffdc.tradingbell.men/api/cube/import", request, String.class);
+        String response = restTemplate.postForObject(environmentHost + "/api/cube/import", request, String.class);
         System.out.println(response);
         
         return ResponseEntity.accepted().build();
     }
     
     private void authenticate() {
-        Credentials credentials = new Credentials("finastra", "198a1a7412a3");        
-        authenticationData = restTemplate.postForObject("http://rep-red-mockers-m2.qa.ffdc.tradingbell.men/api/cargo/oauth/auth", credentials, AuthenticationData.class);               
+        Credentials credentials = new Credentials(environmentLogin, environmentPassword);
+        AuthenticationData authenticationData = restTemplate.postForObject(environmentHost + "/api/cargo/oauth/auth", credentials, AuthenticationData.class);
+        headers = new HttpHeaders();
+        headers.set("Content-Type", "application/json");
+        headers.set("Authorization", authenticationData.getToken());
+        authenticated = true;
     }
+    
 }
