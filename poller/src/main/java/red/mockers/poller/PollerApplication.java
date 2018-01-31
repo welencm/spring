@@ -9,6 +9,6 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 public class PollerApplication {
 
     public static void main(String[] args) throws Exception {
-        SpringApplication.run(PollerApplication.class);
+        SpringApplication.run(PollerApplication.class, args);
     }
 }
