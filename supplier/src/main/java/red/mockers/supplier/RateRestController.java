@@ -1,8 +1,11 @@
 package red.mockers.supplier;
 
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -17,7 +20,10 @@ import red.mockers.common.Rate;
 
 @RestController
 @RequestMapping("/rate")
-public class RateRestController {        
+public class RateRestController {
+    private static final Logger log = LoggerFactory.getLogger(RateRestController.class);
+    private static final SimpleDateFormat dateFormat = new SimpleDateFormat("HH:mm:ss");
+    
     private boolean authenticated = false;
     
     @Value("${environment.host}")
@@ -32,18 +38,23 @@ public class RateRestController {
     @Value("${cube.complete}")
     private String cubeComplete;
     
-    @Value("${cube.recent}")
-    private String cubeRecent;
+    @Value("${cube.limited}")
+    private String cubeLimited;
+    
+    @Value("${cube.limited.max}")
+    private long cubeLimitedMax;
     
     private final RestTemplate restTemplate = new RestTemplate();    
     private HttpHeaders headers;    
-    private final ConcurrentHashMap<String, AtomicLong> idGenerators;
+    
+    private final ConcurrentHashMap<String, AtomicLong> completeGenerators;
+    private final ConcurrentHashMap<String, AtomicLong> limitedGenerators;
     
     private Rate lastRate = new Rate(new Date(), "EUR/PLN", 4.1234, 4.4321);
 
     public RateRestController() {       
-        this.idGenerators = new ConcurrentHashMap<>();
-
+        this.completeGenerators = new ConcurrentHashMap<>();
+        this.limitedGenerators = new ConcurrentHashMap<>();
     }
     
     @RequestMapping(method = RequestMethod.GET)
@@ -57,22 +68,40 @@ public class RateRestController {
         
         if(!authenticated)
             authenticate();                        
-                
-        AtomicLong idGenerator = idGenerators.get(input.getPair());
-        if(idGenerator == null) {
-            idGenerator = new AtomicLong();
-            idGenerators.put(input.getPair(), idGenerator);
+        
+        //complete cube entry
+        AtomicLong completeGenerator = completeGenerators.get(input.getPair());
+        if(completeGenerator == null) {
+            completeGenerator = new AtomicLong(1);
+            completeGenerators.put(input.getPair(), completeGenerator);
         }
         
-        CubeEntry cubeEntry = new CubeEntry(cubeComplete, idGenerator.incrementAndGet(), input);
+        CubeEntry cubeEntry = new CubeEntry(cubeComplete, completeGenerator.incrementAndGet(), input);        
+        postCubeEntry(cubeEntry);                
         
-        System.out.println(cubeEntry);
-        HttpEntity<CubeEntry> request = new HttpEntity<>(cubeEntry, headers);
+        //limited cube entry
+        AtomicLong limitedGenerator = limitedGenerators.get(input.getPair());
+        if(limitedGenerator == null) {
+            limitedGenerator = new AtomicLong(1);
+            limitedGenerators.put(input.getPair(), limitedGenerator);
+        }  
         
-        String response = restTemplate.postForObject(environmentHost + "/api/cube/import", request, String.class);
-        System.out.println(response);
-        
+        long id = limitedGenerator.incrementAndGet();
+        if(id > cubeLimitedMax) {
+            limitedGenerator.set(1);
+            id = 1;
+        }
+        cubeEntry = new CubeEntry(cubeLimited, id, input);
+        postCubeEntry(cubeEntry);                
+                
         return ResponseEntity.accepted().build();
+    }
+    
+    private String postCubeEntry(CubeEntry cubeEntry) {
+        HttpEntity<CubeEntry> request = new HttpEntity<>(cubeEntry, headers);        
+        log.info(cubeEntry.toString());
+        String response = restTemplate.postForObject(environmentHost + "/api/cube/import", request, String.class);
+        return response;
     }
     
     private void authenticate() {

@@ -10,8 +10,8 @@ public class CubeEntry {
     private final static String DATE_FORMAT = "yyyy-MM-dd'T'hh:mm:ss";
     
     private String reportName;
-    private String[] columnNames = {"id:PK", "currency:PK", "price", "date"};
-    private String[] columnTypes = {"long", "string", "double", "datetime"};
+    private String[] columnNames = {"id:PK", "currency:PK", "price", "date", "time"};
+    private String[] columnTypes = {"long", "string", "double", "datetime", "time"};
     private String[][] rows;
     
     public CubeEntry(){
@@ -24,11 +24,14 @@ public class CubeEntry {
         SimpleDateFormat df = new SimpleDateFormat(DATE_FORMAT);
         df.setTimeZone(TimeZone.getTimeZone("UTC"));
         
+        String dateTime = df.format(date);
+        String time = dateTime.substring(11);
         this.rows = new String[][] {new String[]{
             "id=" + Long.toString(id),
             "currency=" + currency,
             "price=" + Double.toString(price),
-            "date=" + df.format(date)
+            "date=" + dateTime,
+            "time=" + time
         }};
     }
 
