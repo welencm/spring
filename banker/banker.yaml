@@ -1,0 +1,57 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: banker
+  namespace: m2-red-mockers
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: banker
+    spec:
+      containers:
+      - name: banker
+        image: ffdcdevuksouth.azurecr.io/red.mockers/banker:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 80
+        resources:
+          limits:
+            memory: 512Mi
+      imagePullSecrets:
+      - name: microservice-regsecret
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: microservice-banker
+  namespace: m2-red-mockers
+  labels:
+    app: banker
+spec:
+  ports:
+  - port: 80
+  selector:
+    app: banker
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: microservice-banker
+  namespace: m2-red-mockers
+  labels:
+    type: http
+  annotations:
+    ingress.kubernetes.io/rewrite-target: /
+    kubernetes.io/ingress.class: nginx
+    external-dns.alpha.kubernetes.io/hostname: banker-red-mockers-m2.qa.ffdc.tradingbell.men
+    external-dns.alpha.kubernetes.io/target: ingress-controller.qa.ffdc.tradingbell.men
+spec:
+  rules:
+  - host: banker-red-mockers-m2.qa.ffdc.tradingbell.men
+    http:
+      paths:
+      - backend:
+          serviceName: microservice-banker
+          servicePort: 80

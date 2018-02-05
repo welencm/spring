@@ -7,7 +7,7 @@ import java.util.Date;
 import java.util.TimeZone;
 
 public class CubeEntry {
-    private final static String DATE_FORMAT = "yyyy-MM-dd'T'hh:mm:ss";
+    private final static String DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ss";
     
     private String reportName;
     private String[] columnNames = {"id:PK", "currency:PK", "price", "date", "time"};
@@ -22,7 +22,7 @@ public class CubeEntry {
         this.reportName = reportName;
         
         SimpleDateFormat df = new SimpleDateFormat(DATE_FORMAT);
-        df.setTimeZone(TimeZone.getTimeZone("UTC"));
+        df.setTimeZone(TimeZone.getTimeZone("GMT+1"));
         
         String dateTime = df.format(date);
         String time = dateTime.substring(11);

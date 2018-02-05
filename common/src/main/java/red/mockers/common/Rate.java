@@ -6,10 +6,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.TimeZone;
 
 public class Rate {
-    private final static String DATE_FORMAT = "yyyyMMdd-hhmmss";
+    private final static String DATE_FORMAT = "yyyyMMdd-HHmmss";
        
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = DATE_FORMAT)
     private Date date;       
@@ -26,7 +25,6 @@ public class Rate {
     public Rate(String date, String pair, double bid, double ask) throws ParseException{
         this(pair, bid, ask);
         SimpleDateFormat df = new SimpleDateFormat(DATE_FORMAT);
-        df.setTimeZone(TimeZone.getTimeZone("UTC"));
         this.date = df.parse(date);
     }
 
